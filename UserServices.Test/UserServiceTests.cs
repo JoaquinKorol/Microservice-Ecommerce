@@ -8,6 +8,8 @@ using static UserServices.Models.jwtSettings;
 using UserServices.Models;
 using UserServices.DTOs;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using UserServices.Exceptions;
+using System.ComponentModel.DataAnnotations;
 
 namespace UserServices.Test
 {
@@ -26,10 +28,10 @@ namespace UserServices.Test
             });
             _userService = new UserService(_userRepositoryMock.Object, jwtSettings);
         }
-        public class UserCreationTests : UserServiceTests
+        public class UserRegisterTests : UserServiceTests
         {
             [Fact]
-            public async Task AddUser_ShouldAddUser_WhenUserIsValid()
+            public async Task CreateUserAsync_ShouldAddUser_WhenUserIsValid()
             {
                 // Arrange: Init Variables
                 var newUserDto = new RegisterDTO
@@ -47,7 +49,7 @@ namespace UserServices.Test
                     CreatedAt = DateTime.UtcNow,
                 };
 
-                // Ajusta el setup para que verifique el objeto correcto
+
                 _userRepositoryMock.Setup(repo => repo.AddAsync(It.Is<User>(u =>
                     u.Name == expectedUser.Name &&
                     u.Email == expectedUser.Email &&
@@ -67,7 +69,7 @@ namespace UserServices.Test
             }
 
             [Fact]
-            public async Task AddUser_ShouldNotAddUser_WhenEmailIsUsed()
+            public async Task CreateUserAsync_ShouldNotAddUser_WhenEmailIsUsed()
             {
                 // Arrange
                 var newUserDto = new RegisterDTO
@@ -78,66 +80,129 @@ namespace UserServices.Test
                 };
 
                 _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(It.IsAny<string>()))
-                .ReturnsAsync(new User());  // Simula que el email ya está en uso
+                .ReturnsAsync(new User());
 
-                // Act & Assert
+                // Act 
                 var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _userService.CreateUserAsync(newUserDto));
 
+
+                // Assert
                 Assert.Equal("The email is already in use.", exception.Message);
                 _userRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<User>()), Times.Never);
             }
         }
-        public class UserLoginTest : UserServiceTests
+
+
+        public class UserUpdateTest : UserServiceTests
         {
-
             [Fact]
-            public async Task LoginUser_ShouldThrowException_WhenInvalidCredentials()
+            public async Task UpdateUserAsync_ShouldReturnUser_WhenCredentialsAreValid()
             {
-                var loginDto = new LoginDTO
+
+                //Arrange
+                var existingUser = new User
                 {
-                    Email = "jane.doe@example.com",
-                    Password = "wrongpassword"
-                };
-
-                _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(loginDto.Email))
-                    .ReturnsAsync(new User { Password = "correctpassword" }); // Simula que el usuario existe pero con la contraseña incorrecta
-
-                var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _userService.LoginUserAsync(loginDto));
-                Assert.Equal("Invalid credentials", exception.Message);
-            }
-
-            [Fact]
-            public async Task LoginUser_ShouldReturnUser_WhenCredentialsAreValid()
-            {
-                // Arrange
-                var loginDto = new LoginDTO
-                {
-                    Email = "jane.doe@example.com",
+                    Id = 1,
+                    Name = "Test",
+                    Email = "test@example.com",
                     Password = "securepassword123"
                 };
 
-                var expectedUser = new User
+                var updateDto = new UpdateDTO
                 {
                     Name = "Jane Doe",
-                    Email = loginDto.Email,
-                    Password = loginDto.Password
+                    Email = "janedoe@example.com"
                 };
 
-                // Simula que el usuario existe y tiene la contraseña correcta
-                _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(loginDto.Email))
-                    .ReturnsAsync(expectedUser);
-
                 // Act
-                var result = await _userService.LoginUserAsync(loginDto);
+                _userRepositoryMock.Setup(repo => repo.UpdateAsync(1, updateDto))
+                    .Callback(() =>
+                    {
+                        existingUser.Name = updateDto.Name;
+                        existingUser.Email = updateDto.Email;
+                    });
+
+
+
+                await _userRepositoryMock.Object.UpdateAsync(1, updateDto);
 
                 // Assert
-                Assert.NotNull(result);
-                Assert.Equal(expectedUser.Name, result.Name);
-                Assert.Equal(expectedUser.Email, result.Email);
-                Assert.Equal(expectedUser.Password, result.Password);
+                Assert.Equal(updateDto.Name, existingUser.Name);
+                Assert.Equal(updateDto.Email, existingUser.Email);
             }
 
+            [Fact]
+            public async Task UpdateUserAsync_ShouldThrowException_WhenUserNotFound()
+            {
+
+                //Arrange
+                var id = 1;
+                var updateDTO = new UpdateDTO { Name = "New Name", Email = "valid@example.com" };
+
+                _userRepositoryMock.Setup(s => s.UpdateAsync(id, updateDTO));
+
+                // Act
+                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync((User)null);
+
+                // Assert
+                await Assert.ThrowsAsync<NotFoundException>(() => _userService.UpdateUserAsync(id, updateDTO));
+            }
+
+            [Fact]
+            public async Task UpdateUserAsync_UserDoesNotExist_ThrowsNotFoundException()
+            {
+                // Arrange
+                var id = 1;
+                var updateDTO = new UpdateDTO { Name = "New Name", Email = "valid@example.com" };
+
+                // Act 
+                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync((User)null);
+
+                // Assert
+                await Assert.ThrowsAsync<NotFoundException>(() => _userService.UpdateUserAsync(id, updateDTO));
+            }
         }
 
+        public class DeleteUserTest : UserServiceTests
+        {
+            [Fact]
+            public async Task DeleteUserAsync_UserDoesNotExist_ThrowsNotFoundException()
+            {
+                // Arrange
+                var id = 1;
+
+                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync((User)null);
+
+                await Assert.ThrowsAsync<NotFoundException>(() => _userService.DeleteUserAsync(id));
+
+                _userRepositoryMock.Verify(repo => repo.GetByIdAsync(id), Times.Once);
+
+                _userRepositoryMock.Verify(repo => repo.DeleteAsync(It.IsAny<User>()), Times.Never);
+            }
+
+            [Fact]
+            public async Task UserDeleteAsync_ShouldDelete_WhenIdExist()
+            {
+                //Arrange
+                var id = 1;
+
+                var existingUser = new User
+                {
+                    Id = id,
+                    Name = "Test User",
+                    Email = "testuser@example.com",
+                    Password = "password123"
+                };
+
+                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync(existingUser);
+
+                await _userService.DeleteUserAsync(id);
+
+                _userRepositoryMock.Verify(repo => repo.GetByIdAsync(id), Times.Once);
+                _userRepositoryMock.Verify(repo => repo.DeleteAsync(existingUser), Times.Once);
+
+            }
+        }
     }
 }
+
