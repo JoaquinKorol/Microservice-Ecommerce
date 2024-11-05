@@ -1,8 +1,10 @@
-﻿namespace UserServices.DTOs
+﻿using UserServices.Models;
+
+namespace UserServices.DTOs
 {
     public class UpdateDTO
     {
-        public string Name { get; set; }
-        public string Email {  get; set; }
+        public string? Name { get; set; } 
+        public string? Email {  get; set; }
     }
 }
