@@ -8,25 +8,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{516B62EB-E3A
 		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{28AF6DF4-D0B4-4F49-954E-AAD467717E6E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserServices", "src\UserService\UserService.csproj", "{9F07A859-46F8-4027-AFCF-783ADDA7F2D4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserServices", "UserServices\UserServices.csproj", "{9F07A859-46F8-4027-AFCF-783ADDA7F2D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProductCatalog", "src\ProductCatalog\ProductCatalog.csproj", "{8EBCCD12-3AE3-4F62-8C0F-01650147C143}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProductCatalog", "ProductCatalog\ProductCatalog.csproj", "{8EBCCD12-3AE3-4F62-8C0F-01650147C143}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShoppingCart", "src\ShoppingCart\ShoppingCart.csproj", "{319DCEE8-637E-41E4-BBBE-F3DBC90C3820}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShoppingCart", "ShoppingCart\ShoppingCart.csproj", "{319DCEE8-637E-41E4-BBBE-F3DBC90C3820}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Order", "src\Order\Order.csproj", "{536147D1-3FD8-44CD-813E-1E3C2D55EAF1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Order", "Order\Order.csproj", "{536147D1-3FD8-44CD-813E-1E3C2D55EAF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Payment", "src\Payment\Payment.csproj", "{6A5DD7BE-1D9F-4B83-A949-30BE8FE2FCF0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Payment", "Payment\Payment.csproj", "{6A5DD7BE-1D9F-4B83-A949-30BE8FE2FCF0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notification", "src\Notification\Notification.csproj", "{7EE252B1-A7A2-48FB-8111-2AD9573284EF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notification", "Notification\Notification.csproj", "{7EE252B1-A7A2-48FB-8111-2AD9573284EF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "test\Test.csproj", "{0A9ECD48-5ABD-4B84-BCE8-786A185BDB11}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{0A9ECD48-5ABD-4B84-BCE8-786A185BDB11}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserServices.Test", "test\UserServices.Test\UserServices.Test.csproj", "{413537B8-0C31-4DE1-91D7-18A9C326A412}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserServices.Test", "UserServices.Test\UserServices.Test.csproj", "{413537B8-0C31-4DE1-91D7-18A9C326A412}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{6FFAEC8C-03A6-43C7-9152-786DDC5884DD}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools\Tools.csproj", "{6FFAEC8C-03A6-43C7-9152-786DDC5884DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
