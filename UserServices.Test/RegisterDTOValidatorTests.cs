@@ -22,7 +22,7 @@ namespace UserServices.Test
        }
 
        [Fact]
-       public async Task AddUser_ShouldThrowException_WhenNameIsEmpty()
+       public async Task CreateUserAsync_ShouldThrowException_WhenNameIsEmpty()
        {
            var newUserDto = new RegisterDTO
            {
@@ -39,7 +39,7 @@ namespace UserServices.Test
        }
 
        [Fact]
-       public async Task AddUser_ShouldThrowException_WhenEmailIsEmpty()
+       public async Task CreateUserAsync_ShouldThrowException_WhenEmailIsEmpty()
        {
            var newUserDto = new RegisterDTO
            {
@@ -55,7 +55,7 @@ namespace UserServices.Test
 
         }
        [Fact]
-       public async Task AddUser_ShouldThrowException_WhenPasswordIsEmpty()
+       public async Task CreateUserAsync_ShouldThrowException_WhenPasswordIsEmpty()
        {
            var newUserDto = new RegisterDTO
            {
@@ -72,11 +72,27 @@ namespace UserServices.Test
         }
 
         [Fact]
-        public async Task AddUser_ShouldThrowException_WhenMailIsNotValid()
+        public async Task CreateUserAsync_ShouldThrowException_WhenNotValidName()
         {
             var newUserDto = new RegisterDTO
             {
                 Name = "Jane Doe123",
+                Email = "jane@doe.com",
+                Password = "securePassword123"
+            };
+
+            ValidationResult result = await _validator.ValidateAsync(newUserDto);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.ErrorMessage == "Invalid name. Only letters, spaces, hyphens, and apostrophes are allowed.");
+        }
+
+        [Fact]
+        public async Task CreateUserAsync_ShouldThrowException_WhenNotValidEmail()  
+        {
+            var newUserDto = new RegisterDTO
+            {
+                Name = "Jane Doe",
                 Email = "jane.doe.com",
                 Password = "securePassword123"
             };
@@ -89,12 +105,12 @@ namespace UserServices.Test
        
 
         [Fact]
-        public async Task AddUser_ShouldThrowException_WhenPasswordIsNotValid()
+        public async Task CreateUserAsync_ShouldThrowException_WhenNotValidPassword()
         {
             var newUserDto = new RegisterDTO
             {
-                Name = "Jane Doe123",
-                Email = "jane.doe.com",
+                Name = "Jane Doe",
+                Email = "jane@doe.com",
                 Password = "123"
             };
 
