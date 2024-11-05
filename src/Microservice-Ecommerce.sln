@@ -24,7 +24,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notification", "Notificatio
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{0A9ECD48-5ABD-4B84-BCE8-786A185BDB11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserServices.Test", "UserServices.Test\UserServices.Test.csproj", "{413537B8-0C31-4DE1-91D7-18A9C326A412}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserServices.Test", "UserServices.Test\UserServices.Test.csproj", "{413537B8-0C31-4DE1-91D7-18A9C326A412}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{6FFAEC8C-03A6-43C7-9152-786DDC5884DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

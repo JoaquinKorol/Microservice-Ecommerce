@@ -1,7 +1,7 @@
 ﻿services:
   userservice:
     build:
-      context: ./UserServices
+      context: ./src/UserServices
       dockerfile: Dockerfile
     ports:
       - "5000:8080"  # Cambia 5000 por el puerto que prefieras
