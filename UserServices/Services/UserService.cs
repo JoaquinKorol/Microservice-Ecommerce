@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
@@ -6,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using UserServices.DTOs;
+using UserServices.Exceptions;
 using UserServices.Models;
 using UserServices.Repositories;
 using UserServices.Validators;
@@ -64,15 +66,30 @@ namespace UserServices.Services
         public async Task DeleteUserAsync(int id)
         {
             var user = await _repository.GetByIdAsync(id);
-            if (user != null)
+            if (user == null)
             {
-                await _repository.DeleteAsync(user);
+                throw new NotFoundException($"User with ID {id} not found.");
             }
-        }   
+            await _repository.DeleteAsync(user);
+            
+        }
 
-        public async Task<User> UpdateUserAsync(int id, UpdateDTO updateDTO) 
+        public async Task<UpdateDTO> UpdateUserAsync(int id, UpdateDTO updateDTO)
         {
-            return await _repository.UpdateAsync(id, updateDTO);
+            var existingUser = await _repository.GetByIdAsync(id);
+            if (existingUser != null)
+            {
+                var validator = new UpdateDTOValidator();
+                var validationResult = await validator.ValidateAsync(updateDTO);
+
+                if (!validationResult.IsValid)
+                {
+                    throw new ValidationException(validationResult.Errors.FirstOrDefault()?.ErrorMessage);
+                }
+
+                return await _repository.UpdateAsync(id, updateDTO);
+            }
+            throw new NotFoundException($"User with ID {id} not found.");
         }
 
         public string GetToken(User user)
