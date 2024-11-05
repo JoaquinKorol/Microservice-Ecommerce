@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using UserServices.DTOs;
+using UserServices.Exceptions;
 using UserServices.Models;
 
 namespace UserServices.Repositories
@@ -32,21 +33,30 @@ namespace UserServices.Repositories
         public async Task DeleteAsync(User user)
         {
             _context.Users.Remove(user);
-            await _context.SaveChangesAsync(); 
+            await _context.SaveChangesAsync();
         }
 
-        public async Task<User> UpdateAsync(int id, UpdateDTO updateDTO)
+        public async Task<UpdateDTO> UpdateAsync(int id, UpdateDTO updateDTO)
         {
+
             var existingUser = await _context.Users.FindAsync(id);
 
-            existingUser.Name = updateDTO.Name;
-            existingUser.Email = updateDTO.Email;
+           
+            existingUser.Name = updateDTO.Name ?? existingUser.Name;
+            existingUser.Email = updateDTO.Email ?? existingUser.Email;
             existingUser.UpdatedAt = DateTime.Now;
-            await _context.SaveChangesAsync();
-            return existingUser;
 
+            
+            await _context.SaveChangesAsync();
+
+            
+            return new UpdateDTO
+            {
+                Name = existingUser.Name,
+                Email = existingUser.Email,
+            };
         }
 
-        
+
     }
 }
