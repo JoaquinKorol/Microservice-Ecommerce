@@ -7,6 +7,8 @@
       - "5000:8080"  # Cambia 5000 por el puerto que prefieras
     environment:
         -  ConnectionStrings__DefaultConnection=Server=host.docker.internal;Database=UserDB;User Id=SA;Password=Fiona2004;Encrypt=True;TrustServerCertificate=True;
+    volumes:
+        - ./src:/app/src
   productcatalog:
     build:
       context: ./ProductCatalog
