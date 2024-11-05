@@ -8,7 +8,9 @@ namespace UserServices.Validators
         public RegisterDTOValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Name cannot be empty.");
+                .NotEmpty().WithMessage("Name cannot be empty.")
+                .Matches(@"^[A-Za-zÀ-ÿ' -]+$")
+                .WithMessage("Invalid name. Only letters, spaces, hyphens, and apostrophes are allowed.");
 
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email cannot be empty.")
