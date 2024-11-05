@@ -8,7 +8,7 @@ namespace UserServices.Repositories
         Task<User> GetByEmailAsync(string email);
         Task<User> GetByIdAsync(int id);
         Task AddAsync(User user);
-        Task<User> UpdateAsync(int id, UpdateDTO updateDTO);
+        Task<UpdateDTO> UpdateAsync(int id, UpdateDTO updateDTO);
         Task DeleteAsync(User user);
     }
 }
