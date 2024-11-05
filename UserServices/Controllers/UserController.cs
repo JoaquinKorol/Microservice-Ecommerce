@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.ComponentModel.DataAnnotations;
 using UserServices.DTOs;
+using UserServices.Exceptions;
 using UserServices.Models;
 using UserServices.Repositories;
 using UserServices.Services;
@@ -29,19 +32,19 @@ namespace UserServices.Controllers
             try
             {
                 var newUser = await _userService.CreateUserAsync(user);
-                return CreatedAtAction(nameof(Register), new { id = newUser.Id }, newUser); // 201 Created
+                return CreatedAtAction(nameof(Register), new { id = newUser.Id }, newUser);
             }
             catch (ValidationException ex)
             {
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request para errores de validación
+                return BadRequest(new { message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(new { message = ex.Message }); // 409 Conflict para email en uso
+                return Conflict(new { message = ex.Message }); 
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An unexpected error occurred.", details = ex.Message }); // 500 Internal Server Error para cualquier otro error
+                return StatusCode(500, new { message = "An unexpected error occurred.", details = ex.Message }); 
             }
         }
 
@@ -49,23 +52,21 @@ namespace UserServices.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<User>> Login([FromBody] LoginDTO loginDTO)
         {
-
             try
             {
                 var user = await _userService.LoginUserAsync(loginDTO);
-                var jwtToken = _userService.GetToken(user); // Genera el token JWT aquí
+                var jwtToken = _userService.GetToken(user); 
 
-                return Ok(new { UserId = user.Id, UserName = user.Name, jwtToken }); // Devuelve el token
+                return Ok(new { UserId = user.Id, UserName = user.Name, jwtToken }); 
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { Message = ex.Message }); // Manejo de excepción para credenciales no válidas
+                return Unauthorized(new { Message = ex.Message }); 
             }
             catch (Exception ex)
             {
-                // Aquí puedes registrar el error (por ejemplo, en la consola o en un archivo de log)
-                Console.WriteLine($"Error: {ex.Message}");
-                return StatusCode(500, new { Message = "An unexpected error occurred." }); // Devuelve un error 500
+                
+                return StatusCode(500, new { Message = "An unexpected error occurred." }); 
             }
         }
 
@@ -73,29 +74,46 @@ namespace UserServices.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<ActionResult<User>> Delete(int id)
         {
-            
-            await _userService.DeleteUserAsync(id);
-            return Ok("Usuario borrado correctamente");
+            try
+            {
+                await _userService.DeleteUserAsync(id);
+                return Ok("Usuario borrado correctamente");
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+
+            }
+
         }
 
+        //user/update/id
         [HttpPut("update/{id}")]
         public async Task<ActionResult<User>> Update(int id, [FromBody] UpdateDTO updateDTO)
         {
-            var updatedUser = await _userService.UpdateUserAsync(id, updateDTO);
-
-            if (updatedUser == null)
+            try
             {
-                return NotFound(new { Message = "User not found." });
+                var updatedUser = await _userService.UpdateUserAsync(id, updateDTO);
+                return Ok(updatedUser);
             }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
 
-            return Ok(updatedUser);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, new { Message = "An error occurred while updating the user.", Details = ex.Message });
+            }
         }
 
-        [Authorize]
-        [HttpGet("protected-endpoint")]
-        public IActionResult GetProtectedData()
-        {
-            return Ok("This is a protected endpoint");
-        }
+        
     }
 }
+
+
