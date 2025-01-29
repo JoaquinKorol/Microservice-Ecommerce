@@ -21,7 +21,7 @@ namespace UserServices.Test
         [Fact]
         public async Task UpdateUserAsync_ShouldThrowException_WhenNotValidEmail()
         {
-            var newUserDto = new UpdateDTO
+            var newUserDto = new UpdateUserDTO
             {
                 Name = "Jane Doe",
                 Email = "jane.doe.com"

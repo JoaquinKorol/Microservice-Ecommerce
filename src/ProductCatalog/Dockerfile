@@ -1,5 +1,5 @@
 # Etapa 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
 # Copiar los archivos .csproj y restaurar las dependencias
@@ -11,7 +11,7 @@ COPY . ./
 RUN dotnet publish -c Release -o /app/out
 
 # Etapa 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
 # Copiar los archivos compilados desde la etapa de construcción

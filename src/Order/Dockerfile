@@ -11,7 +11,7 @@ COPY . ./
 RUN dotnet publish -c Release -o /app/out
 
 # Etapa 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
 # Copiar los archivos compilados desde la etapa de construcción

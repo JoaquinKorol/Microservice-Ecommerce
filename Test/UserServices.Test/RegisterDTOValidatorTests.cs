@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UserServices.DTOs;
-using UserServices.Services;
 using UserServices.Validators;
 using FluentValidation.Results;
 
@@ -24,7 +23,7 @@ namespace UserServices.Test
        [Fact]
        public async Task CreateUserAsync_ShouldThrowException_WhenNameIsEmpty()
        {
-           var newUserDto = new RegisterDTO
+           var newUserDto = new RegisterUserDTO
            {
                Name = "",
                Email = "jane.doe@example.com",
@@ -41,7 +40,7 @@ namespace UserServices.Test
        [Fact]
        public async Task CreateUserAsync_ShouldThrowException_WhenEmailIsEmpty()
        {
-           var newUserDto = new RegisterDTO
+           var newUserDto = new RegisterUserDTO
            {
                Name = "Jane Doe",
                Email = "",
@@ -57,7 +56,7 @@ namespace UserServices.Test
        [Fact]
        public async Task CreateUserAsync_ShouldThrowException_WhenPasswordIsEmpty()
        {
-           var newUserDto = new RegisterDTO
+           var newUserDto = new RegisterUserDTO
            {
                Name = "Jane Doe",
                Email = "jane.doe@example.com",
@@ -74,7 +73,7 @@ namespace UserServices.Test
         [Fact]
         public async Task CreateUserAsync_ShouldThrowException_WhenNotValidName()
         {
-            var newUserDto = new RegisterDTO
+            var newUserDto = new RegisterUserDTO
             {
                 Name = "Jane Doe123",
                 Email = "jane@doe.com",
@@ -90,7 +89,7 @@ namespace UserServices.Test
         [Fact]
         public async Task CreateUserAsync_ShouldThrowException_WhenNotValidEmail()  
         {
-            var newUserDto = new RegisterDTO
+            var newUserDto = new RegisterUserDTO
             {
                 Name = "Jane Doe",
                 Email = "jane.doe.com",
@@ -107,7 +106,7 @@ namespace UserServices.Test
         [Fact]
         public async Task CreateUserAsync_ShouldThrowException_WhenNotValidPassword()
         {
-            var newUserDto = new RegisterDTO
+            var newUserDto = new RegisterUserDTO
             {
                 Name = "Jane Doe",
                 Email = "jane@doe.com",

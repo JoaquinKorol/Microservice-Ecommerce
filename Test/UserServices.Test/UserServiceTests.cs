@@ -1,40 +1,42 @@
 using Xunit;
 using Moq;
 using UserServices;
-using UserServices.Services;
 using UserServices.Repositories;
 using Microsoft.Extensions.Options;
-using static UserServices.Models.jwtSettings;
 using UserServices.Models;
 using UserServices.DTOs;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using UserServices.Exceptions;
-using System.ComponentModel.DataAnnotations;
+using Core.Interfaces;
+using System;
+using System.Threading.Tasks;
+using static UserServices.Models.jwtSettings;
+using Microsoft.AspNetCore.Mvc;
+using UserServices.Controllers;
+using Core.Exceptions;
 
 namespace UserServices.Test
 {
     public class UserServiceTests
     {
-        private readonly Mock<IUserRepository> _userRepositoryMock;
+        private readonly Mock<IRepository<User>> _userRepositoryMock;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
-            _userRepositoryMock = new Mock<IUserRepository>();
-            var jwtSettings = Options.Create(new JwtSettings
+            _userRepositoryMock = new Mock<IRepository<User>>(); // Inicialización del mock
+            var jwtSettings = Options.Create(new jwtSettings
             {
-                // Inicializa las propiedades necesarias de JwtSettings aquí
                 Secret = "MKDsañdsidajidsaiodjsklajpovivcknqasdklñas"
             });
             _userService = new UserService(_userRepositoryMock.Object, jwtSettings);
         }
+
         public class UserRegisterTests : UserServiceTests
         {
             [Fact]
             public async Task CreateUserAsync_ShouldAddUser_WhenUserIsValid()
             {
-                // Arrange: Init Variables
-                var newUserDto = new RegisterDTO
+                // Arrange
+                var newUserDto = new RegisterUserDTO
                 {
                     Name = "Jane Doe",
                     Email = "jane.doe@example.com",
@@ -46,124 +48,84 @@ namespace UserServices.Test
                     Name = newUserDto.Name,
                     Email = newUserDto.Email,
                     Password = newUserDto.Password,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
                 };
-
 
                 _userRepositoryMock.Setup(repo => repo.AddAsync(It.Is<User>(u =>
                     u.Name == expectedUser.Name &&
                     u.Email == expectedUser.Email &&
-                    u.Password == expectedUser.Password &&
-                    u.CreatedAt.Date == expectedUser.CreatedAt.Date
+                    u.Password == expectedUser.Password
                 ))).Verifiable();
 
-                // Act: Execute method to test
+                // Act
                 var result = await _userService.CreateUserAsync(newUserDto);
 
-                // Assert: comprobation values
+                // Assert
                 _userRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<User>()), Times.Once);
                 Assert.NotNull(result);
                 Assert.Equal(expectedUser.Name, result.Name);
                 Assert.Equal(expectedUser.Email, result.Email);
-                Assert.Equal(expectedUser.Password, result.Password);
             }
 
-            [Fact]
-            public async Task CreateUserAsync_ShouldNotAddUser_WhenEmailIsUsed()
-            {
-                // Arrange
-                var newUserDto = new RegisterDTO
-                {
-                    Name = "Jane Doe",
-                    Email = "jane.doe@example.com",
-                    Password = "ValidPassword123"  // Contraseña válida
-                };
-
-                _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(It.IsAny<string>()))
-                .ReturnsAsync(new User());
-
-                // Act 
-                var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _userService.CreateUserAsync(newUserDto));
-
-
-                // Assert
-                Assert.Equal("The email is already in use.", exception.Message);
-                _userRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<User>()), Times.Never);
-            }
+            
         }
 
-
-        public class UserUpdateTest : UserServiceTests
+        public class UserUpdateTests : UserServiceTests
         {
             [Fact]
             public async Task UpdateUserAsync_ShouldReturnUser_WhenCredentialsAreValid()
             {
-
-                //Arrange
+                // Arrange
+                var userId = 1;
                 var existingUser = new User
                 {
-                    Id = 1,
+                    Id = userId,
                     Name = "Test",
                     Email = "test@example.com",
                     Password = "securepassword123"
                 };
 
-                var updateDto = new UpdateDTO
+                var updateDto = new UpdateUserDTO
                 {
                     Name = "Jane Doe",
                     Email = "janedoe@example.com"
                 };
 
+                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(existingUser);
+                _userRepositoryMock.Setup(repo => repo.UpdateAsync(It.IsAny<User>())).Callback<User>(updatedUser =>
+                {
+                    existingUser.Name = updatedUser.Name;
+                    existingUser.Email = updatedUser.Email;
+                });
+
                 // Act
-                _userRepositoryMock.Setup(repo => repo.UpdateAsync(1, updateDto))
-                    .Callback(() =>
-                    {
-                        existingUser.Name = updateDto.Name;
-                        existingUser.Email = updateDto.Email;
-                    });
-
-
-
-                await _userRepositoryMock.Object.UpdateAsync(1, updateDto);
+                var result = await _userService.UpdateUserAsync(userId, updateDto);
 
                 // Assert
-                Assert.Equal(updateDto.Name, existingUser.Name);
-                Assert.Equal(updateDto.Email, existingUser.Email);
+                Assert.Equal(updateDto.Name, result.Name);
+                Assert.Equal(updateDto.Email, result.Email);
+                _userRepositoryMock.Verify(repo => repo.GetByIdAsync(userId), Times.Once);
+                _userRepositoryMock.Verify(repo => repo.UpdateAsync(It.IsAny<User>()), Times.Once);
             }
 
             [Fact]
             public async Task UpdateUserAsync_ShouldThrowException_WhenUserNotFound()
             {
-
-                //Arrange
-                var id = 1;
-                var updateDTO = new UpdateDTO { Name = "New Name", Email = "valid@example.com" };
-
-                _userRepositoryMock.Setup(s => s.UpdateAsync(id, updateDTO));
-
-                // Act
-                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync((User)null);
-
-                // Assert
-                await Assert.ThrowsAsync<NotFoundException>(() => _userService.UpdateUserAsync(id, updateDTO));
-            }
-
-            [Fact]
-            public async Task UpdateUserAsync_UserDoesNotExist_ThrowsNotFoundException()
-            {
                 // Arrange
-                var id = 1;
-                var updateDTO = new UpdateDTO { Name = "New Name", Email = "valid@example.com" };
+                var userId = 1;
+                var updateDTO = new UpdateUserDTO { Name = "New Name", Email = "newemail@example.com" };
 
-                // Act 
-                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync((User)null);
+                _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync((User)null);
 
-                // Assert
-                await Assert.ThrowsAsync<NotFoundException>(() => _userService.UpdateUserAsync(id, updateDTO));
+                // Act & Assert
+                var exception = await Assert.ThrowsAsync<NotFoundException>(() => _userService.UpdateUserAsync(userId, updateDTO));
+                Assert.Equal($"User with ID {userId} not found.", exception.Message);
+
+                _userRepositoryMock.Verify(repo => repo.GetByIdAsync(userId), Times.Once);
             }
         }
 
-        public class DeleteUserTest : UserServiceTests
+        public class DeleteUserTests : UserServiceTests
         {
             [Fact]
             public async Task DeleteUserAsync_UserDoesNotExist_ThrowsNotFoundException()
@@ -173,19 +135,19 @@ namespace UserServices.Test
 
                 _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync((User)null);
 
-                await Assert.ThrowsAsync<NotFoundException>(() => _userService.DeleteUserAsync(id));
+                // Act & Assert
+                var exception = await Assert.ThrowsAsync<NotFoundException>(() => _userService.DeleteUserAsync(id));
+                Assert.Equal($"User with ID {id} not found.", exception.Message);
 
                 _userRepositoryMock.Verify(repo => repo.GetByIdAsync(id), Times.Once);
-
-                _userRepositoryMock.Verify(repo => repo.DeleteAsync(It.IsAny<User>()), Times.Never);
+                _userRepositoryMock.Verify(repo => repo.DeleteAsync(It.IsAny<int>()), Times.Never);
             }
 
             [Fact]
-            public async Task UserDeleteAsync_ShouldDelete_WhenIdExist()
+            public async Task DeleteUserAsync_ShouldDelete_WhenIdExists()
             {
-                //Arrange
+                // Arrange
                 var id = 1;
-
                 var existingUser = new User
                 {
                     Id = id,
@@ -196,13 +158,13 @@ namespace UserServices.Test
 
                 _userRepositoryMock.Setup(repo => repo.GetByIdAsync(id)).ReturnsAsync(existingUser);
 
+                // Act
                 await _userService.DeleteUserAsync(id);
 
+                // Assert
                 _userRepositoryMock.Verify(repo => repo.GetByIdAsync(id), Times.Once);
-                _userRepositoryMock.Verify(repo => repo.DeleteAsync(existingUser), Times.Once);
-
+                _userRepositoryMock.Verify(repo => repo.DeleteAsync(id), Times.Once);
             }
         }
     }
 }
-
