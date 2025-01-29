@@ -17,17 +17,7 @@ namespace Order.Validators
                 .NotEmpty()
                 .WithMessage("Shipping address cannot be empty.");
 
-           
-            RuleFor(x => x.TotalAmount)
-                .GreaterThan(0)
-                .WithMessage("TotalAmount must be greater than 0.");
 
-            
-            RuleFor(x => x.Status)
-                .GreaterThan(0)
-                .WithMessage("Status must be a valid positive number.");
-
-            
             RuleFor(x => x.OrderItems)
                 .NotEmpty()
                 .WithMessage("OrderItems cannot be empty.")
