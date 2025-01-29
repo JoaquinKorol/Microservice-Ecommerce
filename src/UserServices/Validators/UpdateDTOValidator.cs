@@ -3,7 +3,7 @@ using UserServices.DTOs;
 
 namespace UserServices.Validators
 {
-    public class UpdateDTOValidator : AbstractValidator<UpdateDTO>
+    public class UpdateDTOValidator : AbstractValidator<UpdateUserDTO>
     {
         public UpdateDTOValidator() 
         { 
