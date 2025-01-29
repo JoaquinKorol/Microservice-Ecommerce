@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using UserServices.DTOs;
-using UserServices.Exceptions;
+using Core.Interfaces;
 using UserServices.Models;
+using Microsoft.EntityFrameworkCore.Storage.Json;
 
 namespace UserServices.Repositories
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository : IRepository<User>
     {
         private readonly UserServicesContext _context;
 
@@ -14,49 +15,37 @@ namespace UserServices.Repositories
         {
             _context = context;
         }
-        public async Task<User> GetByEmailAsync(string email)
+
+        public async Task<IEnumerable<User>> GetAllAsync()
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return await _context.Set<User>().ToListAsync();
         }
 
         public async Task<User> GetByIdAsync(int id)
         {
-            return await _context.Users.FindAsync(id);
+            return await _context.Set<User>().FindAsync(id);
         }
 
         public async Task AddAsync(User user)
         {
-            await _context.Users.AddAsync(user);
+            await _context.Set<User>().AddAsync(user);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(User user)
+        public async Task UpdateAsync(User user)
         {
-            _context.Users.Remove(user);
+            _context.Set<User>().Update(user);
             await _context.SaveChangesAsync();
         }
 
-        public async Task<UpdateDTO> UpdateAsync(int id, UpdateDTO updateDTO)
+        public async Task DeleteAsync(int id)
         {
-
-            var existingUser = await _context.Users.FindAsync(id);
-
-           
-            existingUser.Name = updateDTO.Name ?? existingUser.Name;
-            existingUser.Email = updateDTO.Email ?? existingUser.Email;
-            existingUser.UpdatedAt = DateTime.Now;
-
-            
-            await _context.SaveChangesAsync();
-
-            
-            return new UpdateDTO
+            var user = await _context.Set<User>().FindAsync(id);
+            if (user != null)
             {
-                Name = existingUser.Name,
-                Email = existingUser.Email,
-            };
+                _context.Set<User>().Remove(user);
+                await _context.SaveChangesAsync();
+            }
         }
-
-
     }
 }
