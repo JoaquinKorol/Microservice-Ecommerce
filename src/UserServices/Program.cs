@@ -3,10 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using UserServices.Repositories;
-using UserServices.Services;
-using static UserServices.Models.jwtSettings;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi.Models;
+using UserServices.Models;
+using Core.Interfaces;
 
 namespace UserServices
 {
@@ -24,15 +22,15 @@ namespace UserServices
 
             builder.Services.AddDbContext<UserServicesContext>(options =>
              options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-           
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+            builder.Services.AddScoped<IRepository<User>, UserRepository>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddHttpContextAccessor();
 
 
-            var jwtSection = builder.Configuration.GetSection("JwtSettings");
-            builder.Services.Configure<JwtSettings>(jwtSection);
-            var jwtSettings = jwtSection.Get<JwtSettings>();
+            var jwtSection = builder.Configuration.GetSection("jwtSettings");
+            builder.Services.Configure<jwtSettings>(jwtSection);
+            var jwtSettings = jwtSection.Get<jwtSettings>();
 
             builder.Services.AddAuthentication(options =>
             {
@@ -52,7 +50,7 @@ namespace UserServices
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
                 };
 
-                // Leer el token desde el header "Authorization"
+                
                 options.Events = new JwtBearerEvents
                 {
                     OnAuthenticationFailed = context =>
@@ -69,7 +67,7 @@ namespace UserServices
             });
 
 
-            
+
 
             var app = builder.Build();
 
@@ -84,7 +82,7 @@ namespace UserServices
 
             app.UseAuthentication();
             app.UseAuthorization();
-;
+            
 
             app.MapControllers();
 

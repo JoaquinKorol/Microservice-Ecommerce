@@ -1,122 +1,157 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using Core.Exceptions;
+using Core.Interfaces;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using UserServices.DTOs;
-using UserServices.Exceptions;
 using UserServices.Models;
 using UserServices.Repositories;
 using UserServices.Validators;
 using static UserServices.Models.jwtSettings;
 
-namespace UserServices.Services
+public class UserService
 {
-    public class UserService
+    private readonly IRepository<User> _repository;
+    private readonly jwtSettings _jwtSettings;
+
+    public UserService(IRepository<User> repository, IOptions<jwtSettings> options)
     {
-        private readonly IUserRepository _repository;
-        private readonly JwtSettings _jwtSettings;
-        public UserService(IUserRepository repository, IOptions<JwtSettings> options) 
+        _repository = repository;
+        _jwtSettings = options.Value;
+    }
+
+    public async Task<IEnumerable<UserDTO>> GetUsersAsync()
+    {
+        var users = await _repository.GetAllAsync();
+        return users.Select(user => new UserDTO
         {
-            _repository = repository;
-            _jwtSettings = options.Value;
+            Name = user.Name,
+            Email = user.Email
+        });
+    }
+    public async Task<RegisterUserDTO> CreateUserAsync(RegisterUserDTO userDto)
+    {
+        var validator = new RegisterDTOValidator();
+        var validationResult = await validator.ValidateAsync(userDto);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.FirstOrDefault()?.ErrorMessage;
+            throw new ValidationException(errors);
         }
 
-        public async Task<User> CreateUserAsync(RegisterDTO userDto)
+        var existingUser = await GetUserByEmailAsync(userDto.Email); // Método para obtener usuario por email
+        if (existingUser != null)
         {
-            var validator = new RegisterDTOValidator();
-            var validationResult = await validator.ValidateAsync(userDto);
-
-            if (!validationResult.IsValid)
-            {
-                var errors = validationResult.Errors.FirstOrDefault()?.ErrorMessage;
-                throw new ValidationException(errors);
-            }
-
-            var existingUser = await _repository.GetByEmailAsync(userDto.Email);
-            if (existingUser != null)
-            {
-                throw new InvalidOperationException("The email is already in use.");
-            }
-            var user = new User
-            {
-                Name = userDto.Name,
-                Email = userDto.Email,
-                Password = userDto.Password,
-                CreatedAt = DateTime.UtcNow,
-            };
-            await _repository.AddAsync(user);
-            return user;
+            throw new InvalidOperationException("The email is already in use.");
         }
 
-        public async Task<User> LoginUserAsync(LoginDTO loginDTO)
+        var user = new User
         {
-            var user = await _repository.GetByEmailAsync(loginDTO.Email);
-            if (user == null || user.Password != loginDTO.Password)
-            {
-                throw new UnauthorizedAccessException("Invalid credentials");
-            }
+            Name = userDto.Name,
+            Email = userDto.Email,
+            Password = userDto.Password,
+            CreatedAt = DateTime.UtcNow,
+        };
 
-            return user; 
-        }
+        await _repository.AddAsync(user);
 
-        public async Task DeleteUserAsync(int id)
+        return new RegisterUserDTO
         {
-            var user = await _repository.GetByIdAsync(id);
-            if (user == null)
-            {
-                throw new NotFoundException($"User with ID {id} not found.");
-            }
-            await _repository.DeleteAsync(user);
             
+            Name = user.Name,
+            Email = user.Email
+        };
+    }
+
+    public async Task<User> LoginUserAsync(LoginUserDTO loginDTO)
+    {
+        var user = await GetUserByEmailAsync(loginDTO.Email); 
+        if (user == null || user.Password != loginDTO.Password)
+        {
+            throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        public async Task<UpdateDTO> UpdateUserAsync(int id, UpdateDTO updateDTO)
+        return user;
+    }
+
+    
+    public async Task<User> GetUserByEmailAsync(string email)
+    {
+        var allUsers = await _repository.GetAllAsync();
+        return allUsers.FirstOrDefault(user => user.Email == email);
+    }
+
+    public async Task DeleteUserAsync(int id)
+    {
+       
+        var user = await _repository.GetByIdAsync(id);
+        if (user == null)
         {
-            var existingUser = await _repository.GetByIdAsync(id);
-            if (existingUser != null)
-            {
-                var validator = new UpdateDTOValidator();
-                var validationResult = await validator.ValidateAsync(updateDTO);
-
-                if (!validationResult.IsValid)
-                {
-                    throw new ValidationException(validationResult.Errors.FirstOrDefault()?.ErrorMessage);
-                }
-
-                return await _repository.UpdateAsync(id, updateDTO);
-            }
+           
             throw new NotFoundException($"User with ID {id} not found.");
         }
 
-        public string GetToken(User user)
+     
+        await _repository.DeleteAsync(id);
+    }
+
+    public async Task<UpdateUserDTO> UpdateUserAsync(int id, UpdateUserDTO updateDTO)
+    {
+        var existingUser = await _repository.GetByIdAsync(id);
+        if (existingUser != null)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
+            var validator = new UpdateDTOValidator();
+            var validationResult = await validator.ValidateAsync(updateDTO);
 
-            var claims = new List<Claim>
+            if (!validationResult.IsValid)
             {
-                new Claim(ClaimTypes.Name, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim("Name", user.Name)
-            };
+                throw new ValidationException(validationResult.Errors.FirstOrDefault()?.ErrorMessage);
+            }
 
-            var tokenDescriptor = new SecurityTokenDescriptor
+            existingUser.Name = updateDTO.Name ?? existingUser.Name;
+            existingUser.Email = updateDTO.Email ?? existingUser.Email;
+            existingUser.UpdatedAt = DateTime.Now;
+
+           
+            await _repository.UpdateAsync(existingUser);
+
+            
+            return new UpdateUserDTO
             {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(30),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-                Audience = _jwtSettings.Audience, 
-                Issuer = _jwtSettings.Issuer
+                Name = existingUser.Name,
+                Email = existingUser.Email
             };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
         }
+        throw new NotFoundException($"User with ID {id} not found.");
+    }
 
+    public string GenerateJwtToken(User user)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
 
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("Name", user.Name)
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(30),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            Audience = _jwtSettings.Audience,
+            Issuer = _jwtSettings.Issuer
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 }
