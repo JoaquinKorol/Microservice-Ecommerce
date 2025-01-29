@@ -70,13 +70,16 @@ namespace Order.Services
                 var errors = validationResult.Errors.FirstOrDefault()?.ErrorMessage;
                 throw new ValidationException(errors);
             }
+
+            decimal totalAmount = createOrderDTO.OrderItems.Sum(item => item.Quantity * item.Price);
+
             var newOrder = new Orders
             {
                 UserId = createOrderDTO.UserId,
                 OrderDate = DateTime.UtcNow,
                 ShippingAddress = createOrderDTO.ShippingAddress,
-                TotalAmount = createOrderDTO.TotalAmount,
-                StatusId = createOrderDTO.Status,
+                TotalAmount = totalAmount,
+                StatusId = 1,
             };
 
             await _respoitory.AddAsync(newOrder);
@@ -117,7 +120,7 @@ namespace Order.Services
             }
 
             existingOrder.ShippingAddress = updateOrderDTO.ShippingAddress ?? existingOrder.ShippingAddress;
-            existingOrder.TotalAmount = updateOrderDTO.TotalAmount > 0 ? updateOrderDTO.TotalAmount : existingOrder.TotalAmount;
+            existingOrder.TotalAmount = updateOrderDTO.OrderItems.Sum(item => item.Quantity * item.Price);
             existingOrder.StatusId = updateOrderDTO.Status;
 
             foreach (var item in updateOrderDTO.OrderItems)
