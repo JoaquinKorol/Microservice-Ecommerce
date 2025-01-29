@@ -1,12 +1,9 @@
-# Ignore Docker files
-Dockerfile
-docker-compose.yml
-*.dockerfile
+# Ignorar Dockerfiles en cualquier subcarpeta
+**/Dockerfile
+**/*.dockerfile
 
-# Ignore appsettings files
-appsettings.json
-appsettings.Development.json
-appsettings.Production.json
+# Ignorar appsettings en cualquier subcarpeta
+**/appsettings*.json
 
 # Ignore node_modules if you use npm
 node_modules/
