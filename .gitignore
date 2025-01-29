@@ -1,6 +1,7 @@
 # Ignorar Dockerfiles en cualquier subcarpeta
 **/Dockerfile
 **/*.dockerfile
+docker-compose.yml
 
 # Ignorar appsettings en cualquier subcarpeta
 **/appsettings*.json
