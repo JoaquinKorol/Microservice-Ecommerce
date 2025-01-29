@@ -17,7 +17,7 @@ namespace Order.Controllers
 
         public OrderController(OrderService orderService)
         {
-            _orderService = orderService; 
+            _orderService = orderService;
         }
 
         [HttpGet]
@@ -62,11 +62,11 @@ namespace Order.Controllers
                 var createdOrder = await _orderService.CreateOrderAsync(createOrderDTO);
                 return CreatedAtAction(nameof(CreateOrder), new { id = createdOrder.OrderId }, createdOrder);
             }
-            catch(ValidationException ex)
+            catch (ValidationException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
-            catch(InvalidOperationException ex)
+            catch (InvalidOperationException ex)
             {
                 return Conflict(new { message = ex.Message });
             }
@@ -109,5 +109,6 @@ namespace Order.Controllers
             {
                 return StatusCode(500, new { message = "An unexpected error occurred.", details = ex.Message });
             }
+        }
     }
 }
