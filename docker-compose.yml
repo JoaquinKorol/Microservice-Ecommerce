@@ -1,0 +1,45 @@
+﻿services:
+  userservice:
+    build:
+      context: ./src/UserServices
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"  # Cambia 5000 por el puerto que prefieras
+    environment:
+        -  ConnectionStrings__DefaultConnection=Server=host.docker.internal;Database=UserDB;User Id=SA;Password=Fiona2004;Encrypt=True;TrustServerCertificate=True;
+    volumes:
+        - ./src:/app/src
+  productcatalog:
+    build:
+      context: ./src/ProductCatalog
+      dockerfile: Dockerfile
+    ports:
+      - "5001:8080"  # Cambia 5001 por el puerto que prefieras  
+    environment:
+        -  ConnectionStrings__DefaultConnection=Server=host.docker.internal;Database=ProductDB;User Id=SA;Password=Fiona2004;Encrypt=True;TrustServerCertificate=True;
+  order:
+    build:
+      context: ./src/Order
+      dockerfile: Dockerfile
+    ports:
+      - "5006:8080"
+    environment:
+        -  ConnectionStrings__DefaultConnection=Server=host.docker.internal;Database=ProductDB;User Id=SA;Password=Fiona2004;Encrypt=True;TrustServerCertificate=True;- # Cambia 5002 por el puerto que prefieras
+  payment:
+    build:
+      context: ./src/Payment
+      dockerfile: Dockerfile
+    ports:
+      - "5007:8080"  # Cambia 5003 por el puerto que prefieras
+  shoppingcart:
+    build:
+      context: ./src/ShoppingCart
+      dockerfile: Dockerfile
+    ports:
+      - "5008:8080"  # Cambia 5004 por el puerto que prefieras
+  notification:
+    build:
+      context: ./src/Notification
+      dockerfile: Dockerfile
+    ports:
+      - "5005:8080"  # Cambia 5005 por el puerto que 
