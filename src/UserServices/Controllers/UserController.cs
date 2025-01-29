@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Core.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -6,10 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.ComponentModel.DataAnnotations;
 using UserServices.DTOs;
-using UserServices.Exceptions;
 using UserServices.Models;
 using UserServices.Repositories;
-using UserServices.Services;
 
 namespace UserServices.Controllers
 {
@@ -24,15 +23,21 @@ namespace UserServices.Controllers
             _userService = userService;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
+        {
+            var users = await _userService.GetUsersAsync();
+            return Ok(users);
+        }
 
         // user/register
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register([FromBody] RegisterDTO user)
+        public async Task<ActionResult<User>> Register([FromBody] RegisterUserDTO user)
         {
             try
             {
-                var newUser = await _userService.CreateUserAsync(user);
-                return CreatedAtAction(nameof(Register), new { id = newUser.Id }, newUser);
+                await _userService.CreateUserAsync(user);
+                return CreatedAtAction(nameof(Register), new {id = user.Name }, user);
             }
             catch (ValidationException ex)
             {
@@ -50,12 +55,12 @@ namespace UserServices.Controllers
 
         //POST: user/login
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login([FromBody] LoginDTO loginDTO)
+        public async Task<ActionResult<User>> Login([FromBody] LoginUserDTO loginDTO)
         {
             try
             {
                 var user = await _userService.LoginUserAsync(loginDTO);
-                var jwtToken = _userService.GetToken(user); 
+                var jwtToken = _userService.GenerateJwtToken(user); 
 
                 return Ok(new { UserId = user.Id, UserName = user.Name, jwtToken }); 
             }
@@ -77,7 +82,7 @@ namespace UserServices.Controllers
             try
             {
                 await _userService.DeleteUserAsync(id);
-                return Ok("Usuario borrado correctamente");
+                return Ok("User deleted successfully.");
             }
             catch (NotFoundException ex)
             {
@@ -89,7 +94,7 @@ namespace UserServices.Controllers
 
         //user/update/id
         [HttpPut("update/{id}")]
-        public async Task<ActionResult<User>> Update(int id, [FromBody] UpdateDTO updateDTO)
+        public async Task<ActionResult<User>> Update(int id, [FromBody] UpdateUserDTO updateDTO)
         {
             try
             {
@@ -111,9 +116,9 @@ namespace UserServices.Controllers
                 return StatusCode(500, new { Message = "An error occurred while updating the user.", Details = ex.Message });
             }
         }
-
-        
     }
-}
+ }
+           
+
 
 
