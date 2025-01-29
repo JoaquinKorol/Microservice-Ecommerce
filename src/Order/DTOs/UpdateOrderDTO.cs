@@ -5,10 +5,7 @@
         
         public string ShippingAddress { get; set; }
 
-        
-        public decimal TotalAmount { get; set; }
 
-       
         public int Status { get; set; }
 
         
