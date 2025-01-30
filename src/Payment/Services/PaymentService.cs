@@ -1,12 +1,15 @@
 ﻿using Core.Exceptions;
 using Core.Interfaces;
+using FluentValidation;
 using MercadoPago.Client;
 using MercadoPago.Client.Payment;
 using MercadoPago.Client.Preference;
 using MercadoPago.Resource.Preference;
 using Microsoft.OpenApi.Writers;
+using Payment.DTOs;
 using Payment.Models;
 using Payment.Repositories;
+using Payment.Validators;
 using System.Runtime.CompilerServices;
 
 namespace Payment.Services
@@ -37,6 +40,16 @@ namespace Payment.Services
 
         public async Task<string> CreatePaymentAsync(decimal amount, string description, int orderId)
         {
+            var validator = new PaymentRequestDTOValidator();
+            var validationResult = await validator.ValidateAsync(new PaymentRequestDTO { Amount = amount, Description = description, OrderId = orderId });
+
+            if(!validationResult.IsValid)
+            {
+                var errors = validationResult.Errors.FirstOrDefault()?.ErrorMessage;
+                throw new ValidationException(errors);
+            }
+
+
             var request = new PreferenceRequest
             {
                 NotificationUrl = "https://baa6-2800-21c1-c000-82d-283b-e168-6e98-240e.ngrok-free.app/api/webhook",
